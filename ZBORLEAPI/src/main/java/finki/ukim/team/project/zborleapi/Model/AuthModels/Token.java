@@ -1,6 +1,5 @@
-package finki.ukim.team.project.zborleapi.Model;
+package finki.ukim.team.project.zborleapi.Model.AuthModels;
 
-import finki.ukim.team.project.zborleapi.Model.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -14,6 +13,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -30,6 +33,13 @@ public class Token {
 
     @Enumerated(EnumType.STRING)
     public TokenType tokenType = TokenType.BEARER;
+
+    @Column(updatable = false)
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 
     public boolean revoked;
 

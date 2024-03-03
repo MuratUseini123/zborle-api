@@ -8,7 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
-import static finki.ukim.team.project.zborleapi.Model.Role.ADMIN;
+import static finki.ukim.team.project.zborleapi.Model.AuthModels.Role.ADMIN;
 
 @SpringBootApplication
 @EnableJpaAuditing(auditorAwareRef = "auditorAware")

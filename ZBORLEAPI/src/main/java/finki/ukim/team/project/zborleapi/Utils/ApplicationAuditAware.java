@@ -1,6 +1,6 @@
 package finki.ukim.team.project.zborleapi.Utils;
 
-import finki.ukim.team.project.zborleapi.Model.User;
+import finki.ukim.team.project.zborleapi.Model.AuthModels.User;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;

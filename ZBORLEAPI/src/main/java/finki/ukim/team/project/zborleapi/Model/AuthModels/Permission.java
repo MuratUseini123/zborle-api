@@ -1,4 +1,4 @@
-package finki.ukim.team.project.zborleapi.Model;
+package finki.ukim.team.project.zborleapi.Model.AuthModels;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

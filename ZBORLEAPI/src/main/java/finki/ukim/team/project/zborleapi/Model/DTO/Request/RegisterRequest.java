@@ -1,6 +1,6 @@
 package finki.ukim.team.project.zborleapi.Model.DTO.Request;
 
-import finki.ukim.team.project.zborleapi.Model.Role;
+import finki.ukim.team.project.zborleapi.Model.AuthModels.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

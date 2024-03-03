@@ -1,7 +1,7 @@
 package finki.ukim.team.project.zborleapi.Service;
 
 import finki.ukim.team.project.zborleapi.Model.DTO.Request.ChangePasswordRequest;
-import finki.ukim.team.project.zborleapi.Model.User;
+import finki.ukim.team.project.zborleapi.Model.AuthModels.User;
 import finki.ukim.team.project.zborleapi.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

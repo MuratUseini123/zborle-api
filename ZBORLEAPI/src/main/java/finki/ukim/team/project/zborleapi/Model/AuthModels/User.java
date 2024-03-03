@@ -1,18 +1,18 @@
-package finki.ukim.team.project.zborleapi.Model;
+package finki.ukim.team.project.zborleapi.Model.AuthModels;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -26,10 +26,21 @@ public class User implements UserDetails {
     @Id
     @GeneratedValue
     private Integer id;
+
     private String firstname;
+
     private String lastname;
+
     private String email;
+
     private String password;
+
+    @Column(updatable = false)
+    @CreationTimestamp
+    private LocalDateTime created_at;
+
+    @UpdateTimestamp
+    private LocalDateTime updated_at;
 
     @Enumerated(EnumType.STRING)
     private Role role;

@@ -12,9 +12,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
-
-import static finki.ukim.team.project.zborleapi.Model.Permission.*;
-import static finki.ukim.team.project.zborleapi.Model.Role.ADMIN;
+import static finki.ukim.team.project.zborleapi.Model.AuthModels.Permission.*;
+import static finki.ukim.team.project.zborleapi.Model.AuthModels.Role.ADMIN;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;

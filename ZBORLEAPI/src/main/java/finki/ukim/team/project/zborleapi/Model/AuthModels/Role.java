@@ -1,15 +1,14 @@
-package finki.ukim.team.project.zborleapi.Model;
+package finki.ukim.team.project.zborleapi.Model.AuthModels;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static finki.ukim.team.project.zborleapi.Model.Permission.*;
+import static finki.ukim.team.project.zborleapi.Model.AuthModels.Permission.*;
 
 @Getter
 @RequiredArgsConstructor

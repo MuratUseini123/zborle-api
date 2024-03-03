@@ -3,7 +3,7 @@ package finki.ukim.team.project.zborleapi.Repository;
 import java.util.List;
 import java.util.Optional;
 
-import finki.ukim.team.project.zborleapi.Model.Token;
+import finki.ukim.team.project.zborleapi.Model.AuthModels.Token;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
