@@ -1,8 +1,11 @@
 package finki.ukim.team.project.zborleapi.API.Word;
 
+import finki.ukim.team.project.zborleapi.Model.DTO.Request.UserGuessRequest;
 import finki.ukim.team.project.zborleapi.Model.DTO.Request.WordRequest;
+import finki.ukim.team.project.zborleapi.Model.DTO.Response.GameFeedback;
 import finki.ukim.team.project.zborleapi.Model.Word;
 import finki.ukim.team.project.zborleapi.Service.WordService;
+import finki.ukim.team.project.zborleapi.Service.WordleGameService;
 import finki.ukim.team.project.zborleapi.Utils.Exception.InvalidWordIdException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,9 +19,12 @@ import java.util.List;
 @RequestMapping("/api/words")
 public class WordController {
     private final WordService wordService;
+    private final WordleGameService wordleGameService;
 
-    public WordController(WordService wordService) {
+
+    public WordController(WordService wordService, WordleGameService wordleGameService) {
         this.wordService = wordService;
+        this.wordleGameService = wordleGameService;
     }
 
     @GetMapping("/{id}")
@@ -71,5 +77,13 @@ public class WordController {
     public ResponseEntity<Void> saveAllWords(@RequestBody List<Word> words) {
         wordService.saveAll(words);
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @PostMapping("/check-word")
+    @PreAuthorize("hasAuthority('user')")
+    public ResponseEntity<GameFeedback> checkWord(@RequestBody UserGuessRequest guess) {
+        String targetWord = "LEMON";
+        GameFeedback response = wordleGameService.checkWord(guess.getGuess(), targetWord);
+        return ResponseEntity.ok(response);
     }
 }
