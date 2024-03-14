@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import finki.ukim.team.project.zborleapi.Model.Color;
+import finki.ukim.team.project.zborleapi.Model.Answer;
 
 @Data
 @Builder
@@ -12,6 +12,6 @@ import finki.ukim.team.project.zborleapi.Model.Color;
 @NoArgsConstructor
 public class UserGuessResponse {
     private String letter;
-    private Color color;
+    private Answer answer;
     int character_order;
 }

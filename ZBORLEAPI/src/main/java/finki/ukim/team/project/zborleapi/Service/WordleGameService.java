@@ -1,12 +1,10 @@
 package finki.ukim.team.project.zborleapi.Service;
-import finki.ukim.team.project.zborleapi.Model.Color;
+import finki.ukim.team.project.zborleapi.Model.Answer;
 import finki.ukim.team.project.zborleapi.Model.DTO.Response.GameFeedback;
 import finki.ukim.team.project.zborleapi.Model.DTO.Response.UserGuessResponse;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Service
 public class WordleGameService {
@@ -20,22 +18,22 @@ public class WordleGameService {
             message = "You found it!";
             for (int i = 0; i < guess.length(); i++) {
                 char guessChar = guess.charAt(i);
-                userGuessResponse.add(new UserGuessResponse(String.valueOf(guessChar), Color.GREEN, i));
+                userGuessResponse.add(new UserGuessResponse(String.valueOf(guessChar), Answer.CORRECT, i));
             }
         } else {
             for (int i = 0; i < guess.length(); i++) {
                 char guessChar = guess.charAt(i);
                 char targetChar = target.charAt(i);
-                Color color;
+                Answer answer;
                 if (guessChar == targetChar) {
-                    color = Color.GREEN;
+                    answer = Answer.CORRECT;
                     usedIndices.add(i);
                 } else if (target.contains(String.valueOf(guessChar))) {
-                    color = Color.YELLOW;
+                    answer = Answer.PARTIALLY_CORRECT;
                 } else {
-                    color = Color.GREY;
+                    answer = Answer.NOT_CORRECT;
                 }
-                userGuessResponse.add(new UserGuessResponse(String.valueOf(guessChar), color,i));
+                userGuessResponse.add(new UserGuessResponse(String.valueOf(guessChar), answer,i));
             }
             message = "Give it one more try!";
         }
