@@ -1,6 +1,7 @@
 package finki.ukim.team.project.zborleapi.Service.ServiceInterface;
 
 
+import finki.ukim.team.project.zborleapi.Model.AuthModels.User;
 import finki.ukim.team.project.zborleapi.Model.DTO.Request.WordRequest;
 import finki.ukim.team.project.zborleapi.Model.Word;
 import org.springframework.stereotype.Service;
@@ -16,4 +17,6 @@ public interface IWordService {
     Word create (WordRequest word);
     Word update(Integer id, WordRequest newWord);
     void saveAll(List<Word> words);
+
+    void assignWordsToUser(User user);
 }

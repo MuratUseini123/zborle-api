@@ -13,6 +13,7 @@ import finki.ukim.team.project.zborleapi.Repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -29,6 +30,7 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final WordService wordService;
 
     public AuthenticationResponse register(RegisterRequest request) {
         Role role  = request.getRole() != null ? request.getRole() : Role.USER;
@@ -46,6 +48,8 @@ public class AuthenticationService {
         var refreshToken = jwtService.generateRefreshToken(user);
 
         saveUserToken(savedUser, jwtToken);
+
+        wordService.assignWordsToUser(savedUser);
 
         return AuthenticationResponse.builder()
                 .accessToken(jwtToken)

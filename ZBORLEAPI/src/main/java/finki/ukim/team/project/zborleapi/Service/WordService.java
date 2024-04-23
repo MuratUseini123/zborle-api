@@ -1,8 +1,11 @@
 package finki.ukim.team.project.zborleapi.Service;
 
 
+import finki.ukim.team.project.zborleapi.Model.AuthModels.User;
 import finki.ukim.team.project.zborleapi.Model.DTO.Request.WordRequest;
+import finki.ukim.team.project.zborleapi.Model.UserWord;
 import finki.ukim.team.project.zborleapi.Model.Word;
+import finki.ukim.team.project.zborleapi.Repository.UserWordRepository;
 import finki.ukim.team.project.zborleapi.Repository.WordRepository;
 import finki.ukim.team.project.zborleapi.Service.ServiceInterface.IWordService;
 import finki.ukim.team.project.zborleapi.Utils.Exception.InvalidWordIdException;
@@ -10,14 +13,18 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 
 @Service
 public class WordService implements IWordService {
 
     private final WordRepository wordRepository;
+    private final UserWordRepository userWordRepository;
 
-    public WordService(WordRepository wordRepository) {
+
+    public WordService(WordRepository wordRepository, UserWordRepository userWordRepository) {
         this.wordRepository = wordRepository;
+        this.userWordRepository = userWordRepository;
     }
 
     @Override
@@ -58,5 +65,27 @@ public class WordService implements IWordService {
     @Override
     public void saveAll(List<Word> words) {
         this.wordRepository.saveAll(words);
+    }
+
+    @Override
+    public void assignWordsToUser(User user) {
+        List<Word> words = wordRepository.findAll();
+
+        Random rand = new Random();
+        int randomNumber = rand.nextInt(968);
+        int index = 0;
+        for (Word word : words) {
+            UserWord userWord = new UserWord();
+            userWord.setUser(user);
+            userWord.setWord(word);
+            userWord.setNumberOfAttempts(0);
+            if(randomNumber==index){
+                userWord.setUserCurrentWord(true);
+            }else {
+                userWord.setUserCurrentWord(false);
+            }
+            userWordRepository.save(userWord);
+            index++;
+        }
     }
 }

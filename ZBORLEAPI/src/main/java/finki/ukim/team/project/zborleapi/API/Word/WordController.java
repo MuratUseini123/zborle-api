@@ -82,8 +82,7 @@ public class WordController {
     @PostMapping("/check-word")
     @PreAuthorize("hasAuthority('user')")
     public ResponseEntity<GameFeedback> checkWord(@RequestBody UserGuessRequest guess) {
-        String targetWord = "LEMON";
-        GameFeedback response = wordleGameService.checkWord(guess.getGuess(), targetWord);
+        GameFeedback response = wordleGameService.checkWord(guess.getGuess());
         return ResponseEntity.ok(response);
     }
 }
