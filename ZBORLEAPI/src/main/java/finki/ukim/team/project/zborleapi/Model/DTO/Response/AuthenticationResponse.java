@@ -15,4 +15,8 @@ public class AuthenticationResponse {
     private String accessToken;
     @JsonProperty("refresh_token")
     private String refreshToken;
+    @JsonProperty("operation")
+    private String operation;
+    @JsonProperty("message")
+    private String message;
 }

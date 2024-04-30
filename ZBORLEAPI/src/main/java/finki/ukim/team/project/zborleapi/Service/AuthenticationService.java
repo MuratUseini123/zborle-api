@@ -21,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -33,28 +34,47 @@ public class AuthenticationService {
     private final WordService wordService;
 
     public AuthenticationResponse register(RegisterRequest request) {
-        Role role  = request.getRole() != null ? request.getRole() : Role.USER;
 
-        var user = User.builder()
-                .firstname(request.getFirstname())
-                .lastname(request.getLastname())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .role(role)
-                .build();
+        Optional<User> existingUser = repository.findByEmail(request.getEmail());
 
-        var savedUser = repository.save(user);
-        var jwtToken = jwtService.generateToken(user);
-        var refreshToken = jwtService.generateRefreshToken(user);
+          if(existingUser.isEmpty()) {
+              Role role  = request.getRole() != null ? request.getRole() : Role.USER;
 
-        saveUserToken(savedUser, jwtToken);
+              var user = User.builder()
+                      .firstname(request.getFirstname())
+                      .lastname(request.getLastname())
+                      .email(request.getEmail())
+                      .password(passwordEncoder.encode(request.getPassword()))
+                      .role(role)
+                      .build();
 
-        wordService.assignWordsToUser(savedUser);
+              var savedUser = repository.save(user);
+              var jwtToken = jwtService.generateToken(user);
+              var refreshToken = jwtService.generateRefreshToken(user);
 
-        return AuthenticationResponse.builder()
-                .accessToken(jwtToken)
-                .refreshToken(refreshToken)
-                .build();
+              saveUserToken(savedUser, jwtToken);
+
+              wordService.assignWordsToUser(savedUser);
+
+              return AuthenticationResponse.builder()
+                      .accessToken(jwtToken)
+                      .refreshToken(refreshToken)
+                      .operation("Success")
+                      .message("Succesfully registered")
+                      .build();
+          }else {
+              StringBuilder builder = new StringBuilder();
+              builder.append("User with email address ");
+              builder.append(existingUser.get().getEmail());
+              builder.append(" already exists");
+              return  new AuthenticationResponse()
+                      .builder()
+                      .refreshToken(null)
+                      .accessToken(null)
+                      .operation("Fail")
+                      .message(builder.toString())
+                      .build();
+          }
     }
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
@@ -75,6 +95,8 @@ public class AuthenticationService {
         return AuthenticationResponse.builder()
                 .accessToken(jwtToken)
                 .refreshToken(refreshToken)
+                .operation("Success")
+                .message("Logged in")
                 .build();
     }
 
