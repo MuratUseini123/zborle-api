@@ -12,6 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
+
 import static finki.ukim.team.project.zborleapi.Model.AuthModels.Permission.*;
 import static finki.ukim.team.project.zborleapi.Model.AuthModels.Role.ADMIN;
 import static org.springframework.http.HttpMethod.DELETE;
@@ -47,13 +48,17 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(req ->
                         req.requestMatchers(WHITE_LIST_URL)
                                 .permitAll()
-                                .requestMatchers("/api/admin/**").hasAnyRole(ADMIN.name())
-                                .requestMatchers(GET, "/api/admin/**").hasAnyAuthority(ADMIN_READ.name())
-                                .requestMatchers(POST, "/api/admin/**").hasAnyAuthority(ADMIN_CREATE.name())
-                                .requestMatchers(PUT, "/api/admin/**").hasAnyAuthority(ADMIN_UPDATE.name())
-                                .requestMatchers(DELETE, "/api/admin/**").hasAnyAuthority(ADMIN_DELETE.name())
-                                .anyRequest()
-                                .authenticated()
+                                .requestMatchers("/api/admin/**").hasRole(ADMIN.name())
+                                .requestMatchers(GET, "/api/admin/**").hasAuthority(ADMIN_READ.name())
+                                .requestMatchers(POST, "/api/admin/**").hasAuthority(ADMIN_CREATE.name())
+                                .requestMatchers(PUT, "/api/admin/**").hasAuthority(ADMIN_UPDATE.name())
+                                .requestMatchers(DELETE, "/api/admin/**").hasAuthority(ADMIN_DELETE.name())
+                                .requestMatchers(POST, "/api/game/start-game").hasAuthority("user")
+                                .requestMatchers(POST, "/api/game/check-word").hasAuthority("user")
+                                .requestMatchers(GET, "/api/game/load-last-game").hasAuthority("user")
+                                .requestMatchers(GET, "/api/game/stats").hasAuthority("user")
+                                .requestMatchers(GET, "/api/game/user-statistics").hasAuthority("user")
+                                .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(STATELESS))
                 .authenticationProvider(authenticationProvider)

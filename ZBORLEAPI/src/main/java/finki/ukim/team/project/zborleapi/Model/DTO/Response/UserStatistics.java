@@ -4,14 +4,14 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import finki.ukim.team.project.zborleapi.Model.Answer;
 
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserGuessResponse {
-    private String letter;
-    private Answer answer;
-    private int characterOrder;
+public class UserStatistics {
+    private long gamesPlayed;
+    private long gamesWon;
+    private double winPercentage;
+    private double averageAttempts;
 }

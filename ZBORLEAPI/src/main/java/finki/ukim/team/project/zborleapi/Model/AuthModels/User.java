@@ -1,7 +1,8 @@
 package finki.ukim.team.project.zborleapi.Model.AuthModels;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import finki.ukim.team.project.zborleapi.Model.UserWord;
 import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -11,8 +12,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -44,6 +43,10 @@ public class User implements UserDetails {
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    @OneToMany(mappedBy = "user")
+    @JsonManagedReference
+    private List<UserWord> userWords;
 
     @OneToMany(mappedBy = "user")
     private List<Token> tokens;

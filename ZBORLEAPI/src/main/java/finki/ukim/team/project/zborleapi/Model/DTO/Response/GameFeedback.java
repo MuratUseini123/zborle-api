@@ -12,6 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class GameFeedback {
-    private List<UserGuessResponse> feedback;
-    String message;
+    private List<UserGuessResponse> userGuessResponses;
+    private String message;
+    private List<String> guesses;
 }

@@ -1,33 +1,35 @@
 package finki.ukim.team.project.zborleapi.API.Word;
 
-import finki.ukim.team.project.zborleapi.Model.DTO.Request.UserGuessRequest;
 import finki.ukim.team.project.zborleapi.Model.DTO.Request.WordRequest;
-import finki.ukim.team.project.zborleapi.Model.DTO.Response.GameFeedback;
 import finki.ukim.team.project.zborleapi.Model.Word;
+import finki.ukim.team.project.zborleapi.Repository.UserRepository;
 import finki.ukim.team.project.zborleapi.Service.WordService;
 import finki.ukim.team.project.zborleapi.Service.WordleGameService;
 import finki.ukim.team.project.zborleapi.Utils.Exception.InvalidWordIdException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Controller
-@RequestMapping("/api/words")
+@RestController
+@RequestMapping("/api/admin/words")
+@Tag(name = "Word API", description = "API for managing words")
+@SecurityRequirement(name = "bearerAuth")
 public class WordController {
     private final WordService wordService;
-    private final WordleGameService wordleGameService;
 
-
-    public WordController(WordService wordService, WordleGameService wordleGameService) {
+    public WordController(WordService wordService, WordleGameService wordleGameService, UserRepository userRepository) {
         this.wordService = wordService;
-        this.wordleGameService = wordleGameService;
     }
 
+    @Operation(summary = "Find Word by ID", description = "Retrieves a word by its ID.")
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('admin:read')")
     public ResponseEntity<Word> findWordById(@PathVariable Integer id) {
         try {
             Word word = wordService.findby(id);
@@ -37,12 +39,15 @@ public class WordController {
         }
     }
 
+    @Operation(summary = "Get All Words", description = "Retrieves all words.")
     @GetMapping
+    @PreAuthorize("hasAuthority('admin:read')")
     public ResponseEntity<List<Word>> getAllWords() {
         List<Word> words = wordService.findAll();
         return ResponseEntity.ok(words);
     }
 
+    @Operation(summary = "Create Word", description = "Creates a new word.")
     @PostMapping
     @PreAuthorize("hasAuthority('admin:create')")
     public ResponseEntity<Word> createWord(@RequestBody WordRequest word) {
@@ -50,6 +55,7 @@ public class WordController {
         return ResponseEntity.status(HttpStatus.CREATED).body(newWord);
     }
 
+    @Operation(summary = "Update Word", description = "Updates an existing word.")
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('admin:update')")
     public ResponseEntity<Word> updateWord(@PathVariable Integer id, @RequestBody WordRequest newWord) {
@@ -61,6 +67,7 @@ public class WordController {
         }
     }
 
+    @Operation(summary = "Delete Word", description = "Deletes a word by its ID.")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('admin:delete')")
     public ResponseEntity<Word> deleteWord(@PathVariable Integer id) {
@@ -72,17 +79,11 @@ public class WordController {
         }
     }
 
+    @Operation(summary = "Batch Save Words", description = "Saves multiple words at once.")
     @PostMapping("/batch")
     @PreAuthorize("hasAuthority('admin:create')")
     public ResponseEntity<Void> saveAllWords(@RequestBody List<Word> words) {
         wordService.saveAll(words);
         return ResponseEntity.status(HttpStatus.CREATED).build();
-    }
-
-    @PostMapping("/check-word")
-    @PreAuthorize("hasAuthority('user')")
-    public ResponseEntity<GameFeedback> checkWord(@RequestBody UserGuessRequest guess) {
-        GameFeedback response = wordleGameService.checkWord(guess.getGuess());
-        return ResponseEntity.ok(response);
     }
 }
