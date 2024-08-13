@@ -34,7 +34,7 @@ public class GameController {
     }
 
     @PostMapping("/start-game")
-    @PreAuthorize("hasAuthority('user')")
+    @PreAuthorize("hasAuthority('user') || hasAuthority('admin')")
     @Operation(summary = "Start a new game or continue the current game", description = "Starts a new game for the user or continues the current game if already started")
     public ResponseEntity<UserWord> startGame() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -46,7 +46,7 @@ public class GameController {
     }
 
     @PostMapping("/check-word")
-    @PreAuthorize("hasAuthority('user')")
+    @PreAuthorize("hasAuthority('user') || hasAuthority('admin')")
     @Operation(summary = "Check a guessed word", description = "Checks the guessed word and returns feedback")
     public ResponseEntity<GameFeedback> checkWord(@RequestBody UserGuessRequest guess) {
         GameFeedback response = wordleGameService.checkWord(guess.getGuess());
@@ -54,7 +54,7 @@ public class GameController {
     }
 
     @GetMapping("/load-last-game")
-    @PreAuthorize("hasAuthority('user')")
+    @PreAuthorize("hasAuthority('user') || hasAuthority('admin')")
     @Operation(summary = "Load the last game", description = "Loads the last game for the user")
     public ResponseEntity<UserWord> loadLastGame() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -66,7 +66,7 @@ public class GameController {
     }
 
     @GetMapping("/stats")
-    @PreAuthorize("hasAuthority('user')")
+    @PreAuthorize("hasAuthority('user') || hasAuthority('admin')")
     @Operation(summary = "Get game stats", description = "Gets the game statistics for the user")
     public ResponseEntity<List<UserWord>> getStats() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -78,7 +78,7 @@ public class GameController {
     }
 
     @GetMapping("/user-statistics")
-    @PreAuthorize("hasAuthority('user')")
+    @PreAuthorize("hasAuthority('user') || hasAuthority('admin')")
     @Operation(summary = "Get user statistics", description = "Gets the overall statistics for the user")
     public ResponseEntity<UserStatistics> getUserStatistics() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
