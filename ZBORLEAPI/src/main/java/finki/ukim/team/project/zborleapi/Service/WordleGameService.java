@@ -2,6 +2,7 @@ package finki.ukim.team.project.zborleapi.Service;
 
 import finki.ukim.team.project.zborleapi.Model.Answer;
 import finki.ukim.team.project.zborleapi.Model.AuthModels.User;
+import finki.ukim.team.project.zborleapi.Model.DTO.GameState;
 import finki.ukim.team.project.zborleapi.Model.DTO.Response.*;
 import finki.ukim.team.project.zborleapi.Model.UserGuessStatus;
 import finki.ukim.team.project.zborleapi.Model.DailyWord;
@@ -162,10 +163,35 @@ public class WordleGameService {
     }
 
     @Transactional
-    public DailyWord startOrContinueGame() {
+    public GameState startOrContinueGame(User user) {
         // Ensure that a DailyWord exists for today
-        return dailyWordRepository.findByDate(LocalDate.now())
+        DailyWord dailyWord = dailyWordRepository.findByDate(LocalDate.now())
                 .orElseGet(this::assignNewWord);
+
+        // Set the start and end of today as LocalDateTime
+        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+        LocalDateTime endOfDay = LocalDate.now().atTime(23, 59, 59);
+
+        // Retrieve all previous guesses for today's word by the user
+        List<UserGuess> userGuesses = userGuessRepository.findByUserAndCreatedAtBetween(user, startOfDay, endOfDay);
+
+        // Create a list of GuessResult to hold each guess with its status
+        List<GuessResult> guessResults = userGuesses.stream()
+                .map(g -> new GuessResult(
+                        g.getGuess(),
+                        g.getStatus().stream()
+                                .map(status -> new UserGuessResponse(
+                                        status.getLetter(),
+                                        status.getAnswer(),
+                                        status.getCharacterOrder()
+                                )).collect(Collectors.toList())
+                )).collect(Collectors.toList());
+
+        // Return a GameState object that includes the DailyWord and all guesses
+        return GameState.builder()
+                .dailyWord(dailyWord)
+                .guesses(guessResults)
+                .build();
     }
 
     public UserStatistics getUserStatistics(User user) {
@@ -200,9 +226,17 @@ public class WordleGameService {
                 .mapToLong(Long::longValue)
                 .average().orElse(0);
 
-        return new UserStatistics(gamesPlayed, gamesWon, winPercentage, averageAttempts);
+        // Return UserStatistics including user details
+        return UserStatistics.builder()
+                .firstName(user.getFirstname())
+                .lastName(user.getLastname())
+                .email(user.getEmail())
+                .gamesPlayed(gamesPlayed)
+                .gamesWon(gamesWon)
+                .winPercentage(winPercentage)
+                .averageAttempts(averageAttempts)
+                .build();
     }
-
     public List<UserStatisticsResponse> getAllUsersStatistics() {
         List<User> users = userRepository.findAll();
         List<UserStatisticsResponse> statisticsList = new ArrayList<>();

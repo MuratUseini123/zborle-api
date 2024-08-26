@@ -1,6 +1,7 @@
 package finki.ukim.team.project.zborleapi.API.Word;
 
 import finki.ukim.team.project.zborleapi.Model.AuthModels.User;
+import finki.ukim.team.project.zborleapi.Model.DTO.GameState;
 import finki.ukim.team.project.zborleapi.Model.DTO.Request.UserGuessRequest;
 import finki.ukim.team.project.zborleapi.Model.DTO.Response.GameFeedback;
 import finki.ukim.team.project.zborleapi.Model.DTO.Response.UserStatistics;
@@ -37,13 +38,15 @@ public class GameController {
     @PostMapping("/start-game")
     @PreAuthorize("hasAuthority('user') || hasAuthority('admin')")
     @Operation(summary = "Start a new game or continue the current game", description = "Starts a new game for the user or continues the current game if already started")
-    public ResponseEntity<DailyWord> startGame() {
+    public ResponseEntity<GameState> startGame() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        User user = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
+        User user = userRepository.findByEmail(userDetails.getUsername()).orElseThrow(() ->
+                new IllegalStateException("User not found")
+        );
 
-        DailyWord dailyWord = wordleGameService.startOrContinueGame();
-        return ResponseEntity.ok(dailyWord);
+        GameState gameState = wordleGameService.startOrContinueGame(user);
+        return ResponseEntity.ok(gameState);
     }
 
     @PostMapping("/check-word")
