@@ -13,7 +13,6 @@ import finki.ukim.team.project.zborleapi.Repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -31,50 +30,41 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
-    private final WordService wordService;
 
     public AuthenticationResponse register(RegisterRequest request) {
-
         Optional<User> existingUser = repository.findByEmail(request.getEmail());
 
-          if(existingUser.isEmpty()) {
-              Role role  = request.getRole() != null ? request.getRole() : Role.USER;
+        if (existingUser.isEmpty()) {
+            Role role = request.getRole() != null ? request.getRole() : Role.USER;
 
-              var user = User.builder()
-                      .firstname(request.getFirstname())
-                      .lastname(request.getLastname())
-                      .email(request.getEmail())
-                      .password(passwordEncoder.encode(request.getPassword()))
-                      .role(role)
-                      .build();
+            var user = User.builder()
+                    .firstname(request.getFirstname())
+                    .lastname(request.getLastname())
+                    .email(request.getEmail())
+                    .password(passwordEncoder.encode(request.getPassword()))
+                    .role(role)
+                    .build();
 
-              var savedUser = repository.save(user);
-              var jwtToken = jwtService.generateToken(user);
-              var refreshToken = jwtService.generateRefreshToken(user);
+            var savedUser = repository.save(user);
+            var jwtToken = jwtService.generateToken(user);
+            var refreshToken = jwtService.generateRefreshToken(user);
 
-              saveUserToken(savedUser, jwtToken);
+            saveUserToken(savedUser, jwtToken);
 
-              wordService.assignWordsToUser(savedUser);
-
-              return AuthenticationResponse.builder()
-                      .accessToken(jwtToken)
-                      .refreshToken(refreshToken)
-                      .operation("Success")
-                      .message("Succesfully registered")
-                      .build();
-          }else {
-              StringBuilder builder = new StringBuilder();
-              builder.append("User with email address ");
-              builder.append(existingUser.get().getEmail());
-              builder.append(" already exists");
-              return  new AuthenticationResponse()
-                      .builder()
-                      .refreshToken(null)
-                      .accessToken(null)
-                      .operation("Fail")
-                      .message(builder.toString())
-                      .build();
-          }
+            return AuthenticationResponse.builder()
+                    .accessToken(jwtToken)
+                    .refreshToken(refreshToken)
+                    .operation("Success")
+                    .message("Successfully registered")
+                    .build();
+        } else {
+            return AuthenticationResponse.builder()
+                    .refreshToken(null)
+                    .accessToken(null)
+                    .operation("Fail")
+                    .message("User with email address " + existingUser.get().getEmail() + " already exists")
+                    .build();
+        }
     }
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
@@ -134,7 +124,7 @@ public class AuthenticationService {
         final String refreshToken;
         final String userEmail;
 
-        if (authHeader == null ||!authHeader.startsWith("Bearer ")) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return;
         }
 

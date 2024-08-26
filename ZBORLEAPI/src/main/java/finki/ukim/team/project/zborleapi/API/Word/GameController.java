@@ -4,9 +4,9 @@ import finki.ukim.team.project.zborleapi.Model.AuthModels.User;
 import finki.ukim.team.project.zborleapi.Model.DTO.Request.UserGuessRequest;
 import finki.ukim.team.project.zborleapi.Model.DTO.Response.GameFeedback;
 import finki.ukim.team.project.zborleapi.Model.DTO.Response.UserStatistics;
-import finki.ukim.team.project.zborleapi.Model.UserWord;
+import finki.ukim.team.project.zborleapi.Model.DTO.Response.UserStatisticsResponse;
+import finki.ukim.team.project.zborleapi.Model.DailyWord;
 import finki.ukim.team.project.zborleapi.Repository.UserRepository;
-import finki.ukim.team.project.zborleapi.Service.WordService;
 import finki.ukim.team.project.zborleapi.Service.WordleGameService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -25,10 +25,11 @@ import java.util.List;
 @Tag(name = "Game API", description = "API for managing games")
 @SecurityRequirement(name = "bearerAuth")
 public class GameController {
+
     private final WordleGameService wordleGameService;
     private final UserRepository userRepository;
 
-    public GameController(WordService wordService, WordleGameService wordleGameService, UserRepository userRepository) {
+    public GameController(WordleGameService wordleGameService, UserRepository userRepository) {
         this.wordleGameService = wordleGameService;
         this.userRepository = userRepository;
     }
@@ -36,13 +37,13 @@ public class GameController {
     @PostMapping("/start-game")
     @PreAuthorize("hasAuthority('user') || hasAuthority('admin')")
     @Operation(summary = "Start a new game or continue the current game", description = "Starts a new game for the user or continues the current game if already started")
-    public ResponseEntity<UserWord> startGame() {
+    public ResponseEntity<DailyWord> startGame() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         User user = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
 
-        UserWord userWord = wordleGameService.startOrContinueGame(user);
-        return ResponseEntity.ok(userWord);
+        DailyWord dailyWord = wordleGameService.startOrContinueGame();
+        return ResponseEntity.ok(dailyWord);
     }
 
     @PostMapping("/check-word")
@@ -51,30 +52,6 @@ public class GameController {
     public ResponseEntity<GameFeedback> checkWord(@RequestBody UserGuessRequest guess) {
         GameFeedback response = wordleGameService.checkWord(guess.getGuess());
         return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/load-last-game")
-    @PreAuthorize("hasAuthority('user') || hasAuthority('admin')")
-    @Operation(summary = "Load the last game", description = "Loads the last game for the user")
-    public ResponseEntity<UserWord> loadLastGame() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        User user = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
-
-        UserWord lastGame = wordleGameService.loadLastGame(user);
-        return ResponseEntity.ok(lastGame);
-    }
-
-    @GetMapping("/stats")
-    @PreAuthorize("hasAuthority('user') || hasAuthority('admin')")
-    @Operation(summary = "Get game stats", description = "Gets the game statistics for the user")
-    public ResponseEntity<List<UserWord>> getStats() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        User user = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
-
-        List<UserWord> stats = wordleGameService.getStats(user);
-        return ResponseEntity.ok(stats);
     }
 
     @GetMapping("/user-statistics")
@@ -87,5 +64,13 @@ public class GameController {
 
         UserStatistics userStatistics = wordleGameService.getUserStatistics(user);
         return ResponseEntity.ok(userStatistics);
+    }
+
+    @GetMapping("/all-user-statistics")
+   // @PreAuthorize("hasAuthority('admin')")
+    @Operation(summary = "Get statistics for all users", description = "Gets the overall statistics for all users")
+    public ResponseEntity<List<UserStatisticsResponse>> getAllUserStatistics() {
+        List<UserStatisticsResponse> statistics = wordleGameService.getAllUsersStatistics();
+        return ResponseEntity.ok(statistics);
     }
 }

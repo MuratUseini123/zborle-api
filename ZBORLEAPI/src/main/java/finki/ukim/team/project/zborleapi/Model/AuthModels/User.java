@@ -1,7 +1,5 @@
 package finki.ukim.team.project.zborleapi.Model.AuthModels;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import finki.ukim.team.project.zborleapi.Model.UserWord;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -36,17 +34,13 @@ public class User implements UserDetails {
 
     @Column(updatable = false)
     @CreationTimestamp
-    private LocalDateTime created_at;
+    private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    private LocalDateTime updated_at;
+    private LocalDateTime updatedAt;
 
     @Enumerated(EnumType.STRING)
     private Role role;
-
-    @OneToMany(mappedBy = "user")
-    @JsonManagedReference
-    private List<UserWord> userWords;
 
     @OneToMany(mappedBy = "user")
     private List<Token> tokens;

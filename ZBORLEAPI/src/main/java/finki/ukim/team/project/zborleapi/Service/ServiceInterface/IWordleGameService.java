@@ -7,4 +7,3 @@ import java.util.List;
 public interface IWordleGameService {
     List<UserGuessResponse> checkWord(String guess, String target);
 }
-

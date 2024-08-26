@@ -12,7 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class GameFeedback {
-    private List<UserGuessResponse> userGuessResponses;
+    private List<UserGuessResponse> currentResponse;  // This will hold the current guess with statuses
     private String message;
-    private List<String> guesses;
+    private List<GuessResult> guesses;  // This will hold all previous guesses with their statuses
 }

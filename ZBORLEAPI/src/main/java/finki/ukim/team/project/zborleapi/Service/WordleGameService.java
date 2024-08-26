@@ -2,13 +2,14 @@ package finki.ukim.team.project.zborleapi.Service;
 
 import finki.ukim.team.project.zborleapi.Model.Answer;
 import finki.ukim.team.project.zborleapi.Model.AuthModels.User;
-import finki.ukim.team.project.zborleapi.Model.DTO.Response.GameFeedback;
-import finki.ukim.team.project.zborleapi.Model.DTO.Response.UserGuessResponse;
-import finki.ukim.team.project.zborleapi.Model.DTO.Response.UserStatistics;
-import finki.ukim.team.project.zborleapi.Model.UserWord;
+import finki.ukim.team.project.zborleapi.Model.DTO.Response.*;
+import finki.ukim.team.project.zborleapi.Model.UserGuessStatus;
+import finki.ukim.team.project.zborleapi.Model.DailyWord;
+import finki.ukim.team.project.zborleapi.Model.UserGuess;
 import finki.ukim.team.project.zborleapi.Model.Word;
+import finki.ukim.team.project.zborleapi.Repository.DailyWordRepository;
+import finki.ukim.team.project.zborleapi.Repository.UserGuessRepository;
 import finki.ukim.team.project.zborleapi.Repository.UserRepository;
-import finki.ukim.team.project.zborleapi.Repository.UserWordRepository;
 import finki.ukim.team.project.zborleapi.Repository.WordRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -16,12 +17,15 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.scheduling.annotation.Scheduled;
+import java.time.LocalDateTime;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Random;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class WordleGameService {
@@ -30,139 +34,194 @@ public class WordleGameService {
     private UserRepository userRepository;
 
     @Autowired
-    private UserWordRepository userWordRepository;
+    private WordRepository wordRepository;
 
     @Autowired
-    private WordRepository wordRepository;
+    private DailyWordRepository dailyWordRepository;
+
+    @Autowired
+    private UserGuessRepository userGuessRepository;
+
+    @Transactional
+    @Scheduled(cron = "0 0 0 * * ?") // Runs at midnight every day
+    public void setDailyWordAndFinalizeGames() {
+        // Finalize incomplete games
+        finalizeIncompleteGames();
+
+        // Assign new word of the day
+        assignNewWord();
+    }
+
+    private void finalizeIncompleteGames() {
+        LocalDate yesterday = LocalDate.now().minusDays(1);
+        DailyWord yesterdayWord = dailyWordRepository.findByDate(yesterday).orElse(null);
+
+        if (yesterdayWord != null) {
+            // Logic to handle unfinished games
+            // You can log the unfinished games or handle them as needed
+        }
+    }
+
+    private DailyWord assignNewWord() {
+        // Select a random word from the Word repository
+        List<Word> words = wordRepository.findAll();
+        if (words.isEmpty()) {
+            throw new IllegalStateException("No words available to assign as the word of the day.");
+        }
+        Word newWord = words.get((int) (Math.random() * words.size()));
+
+        // Save the new word as the word of the day
+        DailyWord dailyWord = new DailyWord();
+        dailyWord.setDate(LocalDate.now());
+        dailyWord.setWord(newWord.getWord());
+        dailyWordRepository.save(dailyWord);
+
+        return dailyWord;
+    }
 
     @Transactional
     public GameFeedback checkWord(String guess) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        String username = userDetails.getUsername();
-        User user = userRepository.findByEmail(username).orElse(null);
-        UserWord userWord = userWordRepository.findTopByUserAndUserCurrentWordIsTrue(user);
-        String target = userWord.getWord().getWord();
+        User user = userRepository.findByEmail(userDetails.getUsername()).orElseThrow(() ->
+                new IllegalStateException("User not found")
+        );
 
-        List<UserGuessResponse> userGuessResponse = new ArrayList<>();
+        // Get the word of the day
+        DailyWord dailyWord = dailyWordRepository.findByDate(LocalDate.now())
+                .orElseGet(this::assignNewWord);
+
+        String target = dailyWord.getWord().toLowerCase(); // Ensure target is lowercase
+        guess = guess.toLowerCase(); // Ensure guess is lowercase
+
+        List<UserGuessResponse> currentGuessResponses = new ArrayList<>();
         String message;
-        userWord.setNumberOfAttempts(userWord.getNumberOfAttempts() + 1);
-        userWord.getGuesses().add(guess);  // Save the guess
 
-        if (guess.equals(target)) {
+        // Use a map to count occurrences of each character
+        Map<Character, Integer> letterCount = new HashMap<>();
+        for (char c : target.toCharArray()) {
+            letterCount.put(c, letterCount.getOrDefault(c, 0) + 1);
+        }
+
+        int correctCount = 0;
+
+        for (int i = 0; i < guess.length(); i++) {
+            char guessChar = guess.charAt(i);
+            char targetChar = target.charAt(i);
+            Answer answer;
+
+            if (guessChar == targetChar) {
+                answer = Answer.CORRECT;
+                correctCount++;
+                letterCount.put(guessChar, letterCount.get(guessChar) - 1);
+            } else if (letterCount.containsKey(guessChar) && letterCount.get(guessChar) > 0) {
+                answer = Answer.PARTIALLY_CORRECT;
+                letterCount.put(guessChar, letterCount.get(guessChar) - 1);
+            } else {
+                answer = Answer.NOT_CORRECT;
+            }
+            currentGuessResponses.add(new UserGuessResponse(String.valueOf(guessChar), answer, i));
+        }
+
+        // Save the current guess to the database
+        UserGuess userGuess = UserGuess.builder()
+                .user(user)
+                .guess(guess)
+                .status(currentGuessResponses.stream()
+                        .map(r -> UserGuessStatus.builder()
+                                .letter(r.getLetter())
+                                .answer(r.getAnswer())
+                                .characterOrder(r.getCharacterOrder())
+                                .build())
+                        .collect(Collectors.toList()))
+                .build();
+
+        userGuessRepository.save(userGuess);
+
+        if (correctCount == target.length()) {
             message = "You found it!";
-            userWord.setCompleted(true);
-            userWord.setWon(true);
-            userWord.setCompletedAt(LocalDateTime.now());
-            userWord.setAttempts(userWord.getNumberOfAttempts());
-            userWordRepository.save(userWord);
-            for (int i = 0; i < guess.length(); i++) {
-                userGuessResponse.add(new UserGuessResponse(String.valueOf(guess.charAt(i)), Answer.CORRECT, i));
-            }
-            assignNewWord(user);  // Assign a new word after winning
+            // Additional logic for handling when the user wins
         } else {
-            for (int i = 0; i < guess.length(); i++) {
-                char guessChar = guess.charAt(i);
-                char targetChar = target.charAt(i);
-                Answer answer;
-                if (guessChar == targetChar) {
-                    answer = Answer.CORRECT;
-                } else if (target.contains(String.valueOf(guessChar))) {
-                    answer = Answer.PARTIALLY_CORRECT;
-                } else {
-                    answer = Answer.NOT_CORRECT;
-                }
-                userGuessResponse.add(new UserGuessResponse(String.valueOf(guessChar), answer, i));
-            }
-            if (userWord.getNumberOfAttempts() >= 6) {
+            if (userGuessRepository.findByUser(user).size() >= 6) {
                 message = "Game over! The correct word was " + target;
-                userWord.setCompleted(true);
-                userWord.setCompletedAt(LocalDateTime.now());
-                userWord.setAttempts(userWord.getNumberOfAttempts());
-                userWordRepository.save(userWord);
-                assignNewWord(user);  // Assign a new word after losing
+                // Additional logic to mark the game as finished after 6 attempts
             } else {
                 message = "Try again!";
             }
         }
 
-        userWordRepository.save(userWord);
-        return new GameFeedback(userGuessResponse, message, userWord.getGuesses());
+        // Retrieve all previous guesses
+        List<GuessResult> allGuesses = userGuessRepository.findByUser(user).stream()
+                .map(g -> new GuessResult(g.getGuess(),
+                        g.getStatus().stream()
+                                .map(s -> new UserGuessResponse(s.getLetter(), s.getAnswer(), s.getCharacterOrder()))
+                                .collect(Collectors.toList())))
+                .collect(Collectors.toList());
+
+        return new GameFeedback(currentGuessResponses, message, allGuesses);
     }
 
     @Transactional
-    public UserWord startOrContinueGame(User user) {
-        UserWord currentGame = userWordRepository.findTopByUserAndUserCurrentWordIsTrue(user);
-        if (currentGame != null) {
-            return currentGame;
-        }
-
-        // Mark all previous incomplete games as completed
-        List<UserWord> userWords = userWordRepository.findByUserAndCompletedIsFalse(user);
-        for (UserWord userWord : userWords) {
-            userWord.setCompleted(true);
-            userWord.setCompletedAt(LocalDateTime.now());
-            userWordRepository.save(userWord);
-        }
-
-        // Reset the current word status for all previous words
-        userWordRepository.resetCurrentWordStatus(user);
-
-        // Assign a new word for today's game
-        List<Word> words = wordRepository.findAll();
-        Word newWord = words.get(new Random().nextInt(words.size()));
-
-        UserWord newUserWord = new UserWord();
-        newUserWord.setUser(user);
-        newUserWord.setWord(newWord);
-        newUserWord.setNumberOfAttempts(0);
-        newUserWord.setUserCurrentWord(true);
-        newUserWord.setStartedAt(LocalDateTime.now());
-        newUserWord.setGameDate(LocalDate.now());
-        newUserWord.setCompleted(false);
-        newUserWord.setWon(false);
-        userWordRepository.save(newUserWord);
-
-        return newUserWord;
-    }
-
-    public UserWord loadLastGame(User user) {
-        return userWordRepository.findTopByUserAndUserCurrentWordIsTrue(user);
-    }
-
-    public List<UserWord> getStats(User user) {
-        return userWordRepository.findLastPlayedWordsByUser(user);
+    public DailyWord startOrContinueGame() {
+        // Ensure that a DailyWord exists for today
+        return dailyWordRepository.findByDate(LocalDate.now())
+                .orElseGet(this::assignNewWord);
     }
 
     public UserStatistics getUserStatistics(User user) {
-        List<UserWord> userWords = userWordRepository.findByUser(user);
-        long gamesPlayed = userWords.stream().filter(UserWord::isCompleted).count();
-        long gamesWon = userWords.stream().filter(UserWord::isWon).count();
-        double winPercentage = 0;
-        if(gamesPlayed!=0) {
-            winPercentage = (gamesWon / (double) gamesPlayed) * 100;
-        }
-        double averageAttempts = userWords.stream().filter(UserWord::isCompleted).mapToInt(UserWord::getAttempts).average().orElse(0);
+        // Retrieve all guesses made by the user
+        List<UserGuess> userGuesses = userGuessRepository.findByUser(user);
+
+        // Calculate games played (based on unique dates of guesses)
+        long gamesPlayed = userGuesses.stream()
+                .map(UserGuess::getCreatedAt)
+                .map(LocalDateTime::toLocalDate)
+                .distinct()
+                .count();
+
+        // Calculate games won (based on the correct guess being made)
+        long gamesWon = userGuesses.stream()
+                .filter(userGuess -> userGuess.getStatus().stream()
+                        .allMatch(status -> status.getAnswer() == Answer.CORRECT))
+                .map(UserGuess::getCreatedAt)
+                .map(LocalDateTime::toLocalDate)
+                .distinct()
+                .count();
+
+        // Calculate win percentage
+        double winPercentage = gamesPlayed > 0 ? (gamesWon / (double) gamesPlayed) * 100 : 0;
+
+        // Calculate average attempts (only for won games)
+        double averageAttempts = userGuesses.stream()
+                .collect(Collectors.groupingBy(
+                        guess -> guess.getCreatedAt().toLocalDate(),
+                        Collectors.counting()))
+                .values().stream()
+                .mapToLong(Long::longValue)
+                .average().orElse(0);
+
         return new UserStatistics(gamesPlayed, gamesWon, winPercentage, averageAttempts);
     }
 
-    private void assignNewWord(User user) {
-        // Reset the current word status for all previous words
-        userWordRepository.resetCurrentWordStatus(user);
+    public List<UserStatisticsResponse> getAllUsersStatistics() {
+        List<User> users = userRepository.findAll();
+        List<UserStatisticsResponse> statisticsList = new ArrayList<>();
 
-        // Assign a new word
-        List<Word> words = wordRepository.findAll();
-        Word newWord = words.get(new Random().nextInt(words.size()));
+        for (User user : users) {
+            UserStatistics stats = getUserStatistics(user);
+            UserStatisticsResponse response = UserStatisticsResponse.builder()
+                    .firstname(user.getFirstname())
+                    .lastname(user.getLastname())
+                    .email(user.getEmail())
+                    .gamesPlayed(stats.getGamesPlayed())
+                    .gamesWon(stats.getGamesWon())
+                    .winPercentage(stats.getWinPercentage())
+                    .averageAttempts(stats.getAverageAttempts())
+                    .build();
 
-        UserWord newUserWord = new UserWord();
-        newUserWord.setUser(user);
-        newUserWord.setWord(newWord);
-        newUserWord.setNumberOfAttempts(0);
-        newUserWord.setUserCurrentWord(true);
-        newUserWord.setStartedAt(LocalDateTime.now());
-        newUserWord.setGameDate(LocalDate.now());
-        newUserWord.setCompleted(false);
-        newUserWord.setWon(false);
-        userWordRepository.save(newUserWord);
+            statisticsList.add(response);
+        }
+
+        return statisticsList;
     }
 }

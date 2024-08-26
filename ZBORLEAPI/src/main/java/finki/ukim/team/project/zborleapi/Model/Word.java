@@ -21,21 +21,20 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Entity
 public class Word {
-    public Word(String word){
-        this.word = word;
-    }
-
     @Id
     @GeneratedValue
-    private Integer Id;
+    private Integer id;
 
     @Size(max = 5)
     private String word;
 
     @Column(updatable = false)
     @CreationTimestamp
-    private LocalDateTime created_at;
+    private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    private LocalDateTime updated_at;
+    private LocalDateTime updatedAt;
+    public Word(String word) {
+        this.word = word;
+    }
 }
