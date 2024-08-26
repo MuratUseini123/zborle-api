@@ -132,7 +132,7 @@ public class WordleGameService {
                         .map(r -> UserGuessStatus.builder()
                                 .letter(r.getLetter())
                                 .answer(r.getAnswer())
-                                .characterOrder(r.getCharacterOrder())
+                                .character_order(r.getCharacter_order())
                                 .build())
                         .collect(Collectors.toList()))
                 .build();
@@ -155,7 +155,7 @@ public class WordleGameService {
         List<GuessResult> allGuesses = userGuessRepository.findByUser(user).stream()
                 .map(g -> new GuessResult(g.getGuess(),
                         g.getStatus().stream()
-                                .map(s -> new UserGuessResponse(s.getLetter(), s.getAnswer(), s.getCharacterOrder()))
+                                .map(s -> new UserGuessResponse(s.getLetter(), s.getAnswer(), s.getCharacter_order()))
                                 .collect(Collectors.toList())))
                 .collect(Collectors.toList());
 
@@ -183,7 +183,7 @@ public class WordleGameService {
                                 .map(status -> new UserGuessResponse(
                                         status.getLetter(),
                                         status.getAnswer(),
-                                        status.getCharacterOrder()
+                                        status.getCharacter_order()
                                 )).collect(Collectors.toList())
                 )).collect(Collectors.toList());
 
@@ -228,13 +228,13 @@ public class WordleGameService {
 
         // Return UserStatistics including user details
         return UserStatistics.builder()
-                .firstName(user.getFirstname())
-                .lastName(user.getLastname())
+                .first_name(user.getFirstname())
+                .last_name(user.getLastname())
                 .email(user.getEmail())
-                .gamesPlayed(gamesPlayed)
-                .gamesWon(gamesWon)
-                .winPercentage(winPercentage)
-                .averageAttempts(averageAttempts)
+                .games_played(gamesPlayed)
+                .games_won(gamesWon)
+                .win_percentage(winPercentage)
+                .average_attempts(averageAttempts)
                 .build();
     }
     public List<UserStatisticsResponse> getAllUsersStatistics() {
@@ -244,13 +244,13 @@ public class WordleGameService {
         for (User user : users) {
             UserStatistics stats = getUserStatistics(user);
             UserStatisticsResponse response = UserStatisticsResponse.builder()
-                    .firstname(user.getFirstname())
-                    .lastname(user.getLastname())
+                    .first_name(user.getFirstname())
+                    .last_name(user.getLastname())
                     .email(user.getEmail())
-                    .gamesPlayed(stats.getGamesPlayed())
-                    .gamesWon(stats.getGamesWon())
-                    .winPercentage(stats.getWinPercentage())
-                    .averageAttempts(stats.getAverageAttempts())
+                    .games_played(stats.getGames_played())
+                    .games_won(stats.getGames_won())
+                    .win_percentage(stats.getWin_percentage())
+                    .average_attempts(stats.getAverage_attempts())
                     .build();
 
             statisticsList.add(response);

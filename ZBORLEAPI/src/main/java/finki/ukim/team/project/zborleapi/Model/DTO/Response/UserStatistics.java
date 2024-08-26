@@ -15,11 +15,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserStatistics {
-    private String firstName;
-    private String lastName;
+    private String first_name;
+    private String last_name;
     private String email;
-    private long gamesPlayed;
-    private long gamesWon;
-    private double winPercentage;
-    private double averageAttempts;
+    private long games_played;
+    private long games_won;
+    private double win_percentage;
+    private double average_attempts;
 }

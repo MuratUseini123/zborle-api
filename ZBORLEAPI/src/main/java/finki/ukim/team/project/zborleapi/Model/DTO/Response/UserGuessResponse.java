@@ -13,5 +13,5 @@ import finki.ukim.team.project.zborleapi.Model.Answer;
 public class UserGuessResponse {
     private String letter;
     private Answer answer;
-    private int characterOrder;
+    private int character_order;
 }

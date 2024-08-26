@@ -15,5 +15,5 @@ public class UserGuessStatus {
     private String letter;
     @Enumerated(EnumType.STRING)
     private Answer answer;
-    private int characterOrder;
+    private int character_order;
 }
