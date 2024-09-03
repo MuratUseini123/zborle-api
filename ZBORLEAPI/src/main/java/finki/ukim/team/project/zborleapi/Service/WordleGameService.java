@@ -22,10 +22,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import java.time.LocalDateTime;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -91,6 +88,11 @@ public class WordleGameService {
         // Get the word of the day
         DailyWord dailyWord = dailyWordRepository.findByDate(LocalDate.now())
                 .orElseGet(this::assignNewWord);
+
+        // Ensure the guessed word exists in the database
+        if (!wordRepository.existsByWordIgnoreCase(guess)) {
+            return new GameFeedback(Collections.emptyList(), "Your guessed word does not exist", Collections.emptyList());
+        }
 
         String target = dailyWord.getWord().toLowerCase(); // Ensure target is lowercase
         guess = guess.toLowerCase(); // Ensure guess is lowercase
