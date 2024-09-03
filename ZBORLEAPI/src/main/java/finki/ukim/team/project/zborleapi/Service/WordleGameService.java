@@ -77,6 +77,93 @@ public class WordleGameService {
         return dailyWord;
     }
 
+//    @Transactional // Working code without letter appearance count
+//    public GameFeedback checkWord(String guess) {
+//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+//        User user = userRepository.findByEmail(userDetails.getUsername()).orElseThrow(() ->
+//                new IllegalStateException("User not found")
+//        );
+//
+//        // Get the word of the day
+//        DailyWord dailyWord = dailyWordRepository.findByDate(LocalDate.now())
+//                .orElseGet(this::assignNewWord);
+//
+//        // Ensure the guessed word exists in the database
+//        if (!wordRepository.existsByWordIgnoreCase(guess)) {
+//            return new GameFeedback(Collections.emptyList(), "Your guessed word does not exist", Collections.emptyList());
+//        }
+//
+//        String target = dailyWord.getWord().toLowerCase(); // Ensure target is lowercase
+//        guess = guess.toLowerCase(); // Ensure guess is lowercase
+//
+//        List<UserGuessResponse> currentGuessResponses = new ArrayList<>();
+//        String message;
+//
+//        // Use a map to count occurrences of each character
+//        Map<Character, Integer> letterCount = new HashMap<>();
+//        for (char c : target.toCharArray()) {
+//            letterCount.put(c, letterCount.getOrDefault(c, 0) + 1);
+//        }
+//
+//        int correctCount = 0;
+//
+//        for (int i = 0; i < guess.length(); i++) {
+//            char guessChar = guess.charAt(i);
+//            char targetChar = target.charAt(i);
+//            Answer answer;
+//
+//            if (guessChar == targetChar) {
+//                answer = Answer.CORRECT;
+//                correctCount++;
+//                letterCount.put(guessChar, letterCount.get(guessChar) - 1);
+//            } else if (letterCount.containsKey(guessChar) && letterCount.get(guessChar) > 0) {
+//                answer = Answer.PARTIALLY_CORRECT;
+//                letterCount.put(guessChar, letterCount.get(guessChar) - 1);
+//            } else {
+//                answer = Answer.NOT_CORRECT;
+//            }
+//            currentGuessResponses.add(new UserGuessResponse(String.valueOf(guessChar), answer, i));
+//        }
+//
+//        // Save the current guess to the database
+//        UserGuess userGuess = UserGuess.builder()
+//                .user(user)
+//                .guess(guess)
+//                .status(currentGuessResponses.stream()
+//                        .map(r -> UserGuessStatus.builder()
+//                                .letter(r.getLetter())
+//                                .answer(r.getAnswer())
+//                                .character_order(r.getCharacter_order())
+//                                .build())
+//                        .collect(Collectors.toList()))
+//                .build();
+//
+//        userGuessRepository.save(userGuess);
+//
+//        if (correctCount == target.length()) {
+//            message = "You found it!";
+//            // Additional logic for handling when the user wins
+//        } else {
+//            if (userGuessRepository.findByUser(user).size() >= 6) {
+//                message = "Game over! The correct word was " + target;
+//                // Additional logic to mark the game as finished after 6 attempts
+//            } else {
+//                message = "Try again!";
+//            }
+//        }
+//
+//        // Retrieve all previous guesses
+//        List<GuessResult> allGuesses = userGuessRepository.findByUser(user).stream()
+//                .map(g -> new GuessResult(g.getGuess(),
+//                        g.getStatus().stream()
+//                                .map(s -> new UserGuessResponse(s.getLetter(), s.getAnswer(), s.getCharacter_order()))
+//                                .collect(Collectors.toList())))
+//                .collect(Collectors.toList());
+//
+//        return new GameFeedback(currentGuessResponses, message, allGuesses);
+//    }
+
     @Transactional
     public GameFeedback checkWord(String guess) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -100,30 +187,39 @@ public class WordleGameService {
         List<UserGuessResponse> currentGuessResponses = new ArrayList<>();
         String message;
 
-        // Use a map to count occurrences of each character
-        Map<Character, Integer> letterCount = new HashMap<>();
+        // Use a map to count occurrences of each character in the target word
+        Map<Character, Integer> targetLetterCount = new HashMap<>();
         for (char c : target.toCharArray()) {
-            letterCount.put(c, letterCount.getOrDefault(c, 0) + 1);
+            targetLetterCount.put(c, targetLetterCount.getOrDefault(c, 0) + 1);
         }
 
+        // First pass: Identify correct letters in correct positions
         int correctCount = 0;
-
         for (int i = 0; i < guess.length(); i++) {
             char guessChar = guess.charAt(i);
             char targetChar = target.charAt(i);
-            Answer answer;
 
             if (guessChar == targetChar) {
-                answer = Answer.CORRECT;
+                currentGuessResponses.add(new UserGuessResponse(String.valueOf(guessChar), Answer.CORRECT, i));
                 correctCount++;
-                letterCount.put(guessChar, letterCount.get(guessChar) - 1);
-            } else if (letterCount.containsKey(guessChar) && letterCount.get(guessChar) > 0) {
-                answer = Answer.PARTIALLY_CORRECT;
-                letterCount.put(guessChar, letterCount.get(guessChar) - 1);
+                targetLetterCount.put(guessChar, targetLetterCount.get(guessChar) - 1);
             } else {
-                answer = Answer.NOT_CORRECT;
+                currentGuessResponses.add(new UserGuessResponse(String.valueOf(guessChar), null, i));
             }
-            currentGuessResponses.add(new UserGuessResponse(String.valueOf(guessChar), answer, i));
+        }
+
+        // Second pass: Identify partially correct letters
+        for (int i = 0; i < guess.length(); i++) {
+            UserGuessResponse response = currentGuessResponses.get(i);
+            if (response.getAnswer() == null) { // This letter wasn't marked correct in the first pass
+                char guessChar = guess.charAt(i);
+                if (targetLetterCount.containsKey(guessChar) && targetLetterCount.get(guessChar) > 0) {
+                    response.setAnswer(Answer.PARTIALLY_CORRECT);
+                    targetLetterCount.put(guessChar, targetLetterCount.get(guessChar) - 1);
+                } else {
+                    response.setAnswer(Answer.NOT_CORRECT);
+                }
+            }
         }
 
         // Save the current guess to the database
